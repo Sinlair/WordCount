@@ -1,102 +1,65 @@
-#include "stdafx.h"
-#include <stdio.h>  
-#include <string.h>  
-#include <stdbool.h>  
-#include <ctype.h>  
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h> 
 
-#define TEXTLEN 10000  
-#define TEXTBUFFER 100  
-#define MAXWORDS 500  
-#define WORDLEN 15  
+void Count(char * file); 
+int Zicount=0;
+int Wordcount=0;
+int Hangcount=0;
 
-int main() {
-	//文本处理  
-	char text[TEXTLEN + 1];
-	char buffer[TEXTBUFFER];
-	char endstr[] = "*\n";
+void Count(char * file)
+{
+    FILE * fp;
+    char a;
+    if((fp=fopen(file,"r"))==NULL)
+    {
+        printf("读文件失败！\n");
+        exit(-1);
+    }
+    while(!feof(fp))
+    {
+        a=fgetc(fp);
 
-	//字符处理  
-	const char space = ' ';
-	const char quote = '\'';
+        if(a!=' '&&a!='\n'&&a!='\t'&&a!=','&&a!='.'&&a!='!'&&a!=';'&&a!='=')
+            Zicount++;
+        if(a==' '||a=='\n'||a=='\t'||a==','||a=='.'||a=='!'||a=='='||a==';')
+        {
+            if(a=='=')                   //解决==      
+                Wordcount--;
+            Wordcount++;
+        }
+    }
+    Zicount--;          //at end of the file,Zicount will add 
+    fclose(fp);
+}
 
-	//单词处理  
-	char words[MAXWORDS][WORDLEN + 1];
-	char nword[MAXWORDS];
-	char word[WORDLEN + 1];
-	int wordlen = 0;
-	int wordcount = 0;
 
-	//读取完整文本  
-	printf("输入文档,可按行回车,单行*回车结束:\n");
-	while (true) {
-
-		//输入缓冲区部分文本,若为endstr,则结束读入.  
-		if (strcmp(fgets(buffer, TEXTBUFFER, stdin), endstr) == 0) {
-			break;
-		}
-
-		//复制到text上.  
-		if (strlen(text) + strlen(buffer) + 1 < TEXTLEN) {
-			strcat(text, buffer);
-		}
-		else {
-			printf("超出限定最大文本长度.(%d)", TEXTLEN);
-			return 1;
-		}
-	}
-
-	//替换',字母,数字以外的所有符号为空格  
-	for (int i = 0; i < strlen(text); i++) {
-		if (text[i] == quote || isalnum(text[i])) {
-			continue;
-		}
-		text[i] = space;
-	}
-
-	//提取单词  
-	int index = 0;
-	while (true) {
-
-		while (text[index] == space)
-			++index;
-
-		if (text[index] == '\0')
-			break;
-
-		wordlen = 0;
-		while (text[index] == quote || isalnum(text[index])) {
-			if (wordlen == WORDLEN) {
-				printf("超出单个单词最大长度.(%d)", WORDLEN);
-				return 1;
-			}
-			word[wordlen++] = tolower(text[index++]);
-		}
-		word[wordlen] = '\0';
-
-		//判定  
-		bool isnew = true;
-		for (int i = 0; i < wordcount; i++) {
-			if (strcmp(words[i], word) == 0) {
-				++nword[i];
-				isnew = false;
-				break;
-			}
-		}
-
-		//存入数组,并统计  
-		if (isnew) {
-			strcpy(words[wordcount], word);
-			nword[wordcount] = 1;
-			wordcount++;
-		}
-	}
-
-	//输出  
-	for (int i = 0; i < wordcount; i++) {
-		if (i % 3 == 0)
-			printf("\n");
-		printf("%-15s%5d ", words[i], nword[i]);
-	}
-	printf("\n");
-	return 0;
+int main(int argc, char* argv[])               //argv[1]保存指令，argv[2]保存文件路径
+{
+    FILE *fp;
+    Count(argv[2]);
+    while(1)
+    {
+        if((fp=fopen(argv[2],"r"))==NULL)
+        {    
+        printf("该文件不存在！\n\n\n");
+        scanf("%s%s%s",argv[0],argv[1],argv[2]);
+        continue;
+        }
+        else if(strcmp(argv[1],"-c")==0)                   //统计文件字符数
+            printf("文件%s字符数为:%d\n",argv[2],Zicount);
+        else if(strcmp(argv[1],"-w")==0)                   //统计文件单词数
+            printf("文件%s单词数为:%d\n",argv[2],Wordcount);
+        else if(strcmp(argv[1],"exit")==0)
+        {
+            printf("程序结束!\n");
+            break;
+        }
+        else 
+            printf("该指令不存在，请重新输入\n");
+        printf("\n\n");
+        scanf("%s%s%s",argv[0],argv[1],argv[2]);
+    }
+    return 0;
 }
