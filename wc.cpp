@@ -1,70 +1,102 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <string.h> 
+#include "stdafx.h"
+#include <stdio.h>  
+#include <string.h>  
+#include <stdbool.h>  
+#include <ctype.h>  
 
-void Count(char * file); 
-int Zicount=0;
-int Wordcount=0;
-int Hangcount=0;
+#define TEXTLEN 10000  
+#define TEXTBUFFER 100  
+#define MAXWORDS 500  
+#define WORDLEN 15  
 
-void Count(char * file)
-{
-    FILE * fp;
-    char a;
-    if((fp=fopen(file,"r"))==NULL)
-    {
-        printf("¶ÁÎÄ¼şÊ§°Ü£¡\n");
-        exit(-1);
-    }
-    while(!feof(fp))
-    {
-        a=fgetc(fp);
+int main() {
+	//æ–‡æœ¬å¤„ç†  
+	char text[TEXTLEN + 1];
+	char buffer[TEXTBUFFER];
+	char endstr[] = "*\n";
 
-        if(a!=' '&&a!='\n'&&a!='\t'&&a!=','&&a!='.'&&a!='!'&&a!=';'&&a!='=')
-            Zicount++;
-        if(a==' '||a=='\n'||a=='\t'||a==','||a=='.'||a=='!'||a=='='||a==';')
-        {
-            if(a=='=')                   //½â¾ö==      
-                Wordcount--;
-            Wordcount++;
-        }
-    }
-    Zicount--;          //at end of the file,Zicount will add 
-    fclose(fp);
+	//å­—ç¬¦å¤„ç†  
+	const char space = ' ';
+	const char quote = '\'';
+
+	//å•è¯å¤„ç†  
+	char words[MAXWORDS][WORDLEN + 1];
+	char nword[MAXWORDS];
+	char word[WORDLEN + 1];
+	int wordlen = 0;
+	int wordcount = 0;
+
+	//è¯»å–å®Œæ•´æ–‡æœ¬  
+	printf("è¾“å…¥æ–‡æ¡£,å¯æŒ‰è¡Œå›è½¦,å•è¡Œ*å›è½¦ç»“æŸ:\n");
+	while (true) {
+
+		//è¾“å…¥ç¼“å†²åŒºéƒ¨åˆ†æ–‡æœ¬,è‹¥ä¸ºendstr,åˆ™ç»“æŸè¯»å…¥.  
+		if (strcmp(fgets(buffer, TEXTBUFFER, stdin), endstr) == 0) {
+			break;
+		}
+
+		//å¤åˆ¶åˆ°textä¸Š.  
+		if (strlen(text) + strlen(buffer) + 1 < TEXTLEN) {
+			strcat(text, buffer);
+		}
+		else {
+			printf("è¶…å‡ºé™å®šæœ€å¤§æ–‡æœ¬é•¿åº¦.(%d)", TEXTLEN);
+			return 1;
+		}
+	}
+
+	//æ›¿æ¢',å­—æ¯,æ•°å­—ä»¥å¤–çš„æ‰€æœ‰ç¬¦å·ä¸ºç©ºæ ¼  
+	for (int i = 0; i < strlen(text); i++) {
+		if (text[i] == quote || isalnum(text[i])) {
+			continue;
+		}
+		text[i] = space;
+	}
+
+	//æå–å•è¯  
+	int index = 0;
+	while (true) {
+
+		while (text[index] == space)
+			++index;
+
+		if (text[index] == '\0')
+			break;
+
+		wordlen = 0;
+		while (text[index] == quote || isalnum(text[index])) {
+			if (wordlen == WORDLEN) {
+				printf("è¶…å‡ºå•ä¸ªå•è¯æœ€å¤§é•¿åº¦.(%d)", WORDLEN);
+				return 1;
+			}
+			word[wordlen++] = tolower(text[index++]);
+		}
+		word[wordlen] = '\0';
+
+		//åˆ¤å®š  
+		bool isnew = true;
+		for (int i = 0; i < wordcount; i++) {
+			if (strcmp(words[i], word) == 0) {
+				++nword[i];
+				isnew = false;
+				break;
+			}
+		}
+
+		//å­˜å…¥æ•°ç»„,å¹¶ç»Ÿè®¡  
+		if (isnew) {
+			strcpy(words[wordcount], word);
+			nword[wordcount] = 1;
+			wordcount++;
+		}
+	}
+
+	//è¾“å‡º  
+	for (int i = 0; i < wordcount; i++) {
+		if (i % 3 == 0)
+			printf("\n");
+		printf("%-15s%5d ", words[i], nword[i]);
+	}
+	printf("\n");
+	return 0;
 }
-
-
-int main(int argc, char* argv[])               //argv[1]±£´æÖ¸Áî£¬argv[2]±£´æÎÄ¼şÂ·¾¶
-{
-    FILE *fp;
-    Count(argv[2]);
-    while(1)
-    {
-        if((fp=fopen(argv[2],"r"))==NULL)
-        {    
-        printf("¸ÃÎÄ¼ş²»´æÔÚ£¡\n\n\n");
-        scanf("%s%s%s",argv[0],argv[1],argv[2]);
-        continue;
-        }
-        else if(strcmp(argv[1],"-c")==0)                   //Í³¼ÆÎÄ¼ş×Ö·ûÊı
-            printf("ÎÄ¼ş%s×Ö·ûÊıÎª:%d\n",argv[2],Zicount);
-        else if(strcmp(argv[1],"-w")==0)                   //Í³¼ÆÎÄ¼şµ¥´ÊÊı
-            printf("ÎÄ¼ş%sµ¥´ÊÊıÎª:%d\n",argv[2],Wordcount);
-        else if(strcmp(argv[1],"exit")==0)
-        {
-            printf("³ÌĞò½áÊø!\n");
-            break;
-        }
-        else 
-            printf("¸ÃÖ¸Áî²»´æÔÚ£¬ÇëÖØĞÂÊäÈë\n");
-        printf("\n\n");
-        scanf("%s%s%s",argv[0],argv[1],argv[2]);
-    }
-    return 0;
-}
-
-
-
-
-
